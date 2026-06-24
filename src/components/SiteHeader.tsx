@@ -55,6 +55,7 @@ export function SiteHeader() {
 
         <nav className="hidden items-center gap-8 md:flex">
           <Link to="/shop" className={navCls("/shop")}>Shop</Link>
+          <Link to="/heritage" className={navCls("/heritage")}>Heritage</Link>
           <Link to="/dashboard" className={navCls("/dashboard")}>Dashboard</Link>
         </nav>
 

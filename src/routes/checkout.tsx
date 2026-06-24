@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, LogIn } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,9 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@/components/ui/radio-group";
-import { useShop, type Order } from "@/lib/store";
+import { useShop } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -32,11 +34,13 @@ const PAYMENT_METHODS = [
 ];
 
 function Checkout() {
-  const { cart, updateQty, removeFromCart, placeOrder } = useShop();
+  const { cart, updateQty, removeFromCart, clearCart } = useShop();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [coupon, setCoupon] = useState("");
   const [discountPct, setDiscountPct] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: "",
     mobile: "",
@@ -65,32 +69,48 @@ function Checkout() {
     }
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) {
       toast.error("Your cart is empty");
       return;
     }
-    const order: Order = {
-      id: "SVOM-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
-      date: new Date().toISOString(),
-      customer: {
-        name: form.name,
-        mobile: form.mobile,
-        address: form.address + (form.landmark ? `, ${form.landmark}` : ""),
-        city: form.city,
-        pincode: form.pincode,
-      },
-      items: cart,
-      subtotal,
-      gst,
-      shipping,
-      total,
-      paymentMethod: payment,
-      status: "Confirmed",
-    };
-    placeOrder(order);
-    toast.success(`Order ${order.id} placed successfully`);
+    if (!user) {
+      toast.error("Please sign in to place your order");
+      navigate({ to: "/auth" });
+      return;
+    }
+    setSubmitting(true);
+    const fullAddress = [form.address, form.landmark, form.city, form.state, form.pincode]
+      .filter(Boolean)
+      .join(", ");
+    const { data, error } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        customer_name: form.name,
+        phone: form.mobile,
+        email: user.email,
+        address: fullAddress,
+        items: cart,
+        subtotal,
+        gst,
+        shipping,
+        discount,
+        total,
+        coupon: discountPct > 0 ? coupon.trim().toUpperCase() : null,
+        payment_method: payment,
+        status: "confirmed",
+      })
+      .select("id")
+      .single();
+    setSubmitting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    clearCart();
+    toast.success(`Order placed successfully — #${(data?.id ?? "").slice(0, 8).toUpperCase()}`);
     navigate({ to: "/dashboard" });
   };
 
@@ -103,7 +123,18 @@ function Checkout() {
           Review your cart, share delivery details and complete your order.
         </p>
 
-        {cart.length === 0 ? (
+        {!authLoading && !user && cart.length > 0 ? (
+          <div className="mt-12 rounded-2xl border border-border bg-card p-10 text-center">
+            <LogIn className="mx-auto h-10 w-10 text-primary" />
+            <h2 className="mt-3 font-serif text-xl text-foreground">Sign in to checkout</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Your cart is saved. Sign in with a one-time email code to place the order.
+            </p>
+            <Button asChild className="mt-5" size="lg">
+              <Link to="/auth">Sign in with email</Link>
+            </Button>
+          </div>
+        ) : cart.length === 0 ? (
           <div className="mt-12 rounded-2xl border border-border bg-card p-10 text-center">
             <p className="text-muted-foreground">Your cart is empty.</p>
             <Button asChild className="mt-4">
@@ -208,8 +239,8 @@ function Checkout() {
               <Row label="Shipping" value={shipping === 0 ? "Free" : `₹${shipping}`} />
               <div className="h-px bg-border" />
               <Row label="Total" value={`₹${total}`} bold />
-              <Button type="submit" className="w-full" size="lg">
-                Place Order
+              <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+                {submitting ? "Placing order…" : "Place Order"}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
                 Secure checkout · Invoice generated automatically

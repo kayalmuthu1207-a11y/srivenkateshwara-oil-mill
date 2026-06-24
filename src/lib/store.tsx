@@ -9,36 +9,20 @@ export type CartItem = {
   image?: string;
 };
 
-export type Order = {
-  id: string;
-  date: string;
-  customer: { name: string; mobile: string; address: string; city: string; pincode: string };
-  items: CartItem[];
-  subtotal: number;
-  gst: number;
-  shipping: number;
-  total: number;
-  paymentMethod: string;
-  status: "Confirmed" | "Packed" | "Shipped" | "Out For Delivery" | "Delivered";
-};
-
 type ShopState = {
   cart: CartItem[];
-  orders: Order[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string, size: string) => void;
   updateQty: (id: string, size: string, qty: number) => void;
   clearCart: () => void;
-  placeOrder: (order: Order) => void;
 };
 
 const ShopContext = createContext<ShopState | null>(null);
 
-const STORAGE_KEY = "svom_shop_v1";
+const STORAGE_KEY = "svom_cart_v1";
 
 export function ShopProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -47,7 +31,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       if (raw) {
         const data = JSON.parse(raw);
         setCart(data.cart || []);
-        setOrders(data.orders || []);
       }
     } catch {}
     setHydrated(true);
@@ -55,8 +38,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cart, orders }));
-  }, [cart, orders, hydrated]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cart }));
+  }, [cart, hydrated]);
 
   const addToCart: ShopState["addToCart"] = (item) => {
     setCart((prev) => {
@@ -80,14 +63,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => setCart([]);
 
-  const placeOrder: ShopState["placeOrder"] = (order) => {
-    setOrders((prev) => [order, ...prev]);
-    setCart([]);
-  };
-
   return (
     <ShopContext.Provider
-      value={{ cart, orders, addToCart, removeFromCart, updateQty, clearCart, placeOrder }}
+      value={{ cart, addToCart, removeFromCart, updateQty, clearCart }}
     >
       {children}
     </ShopContext.Provider>

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { PRODUCTS, type Product } from "@/lib/products";
 import { useShop } from "@/lib/store";
+import { ProductReviews } from "@/components/ProductReviews";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -225,6 +226,7 @@ function ProductCard({ product }: { product: Product }) {
           >
             Add to Cart
           </Button>
+          <ProductReviews productId={product.id} />
         </div>
       </div>
     </div>

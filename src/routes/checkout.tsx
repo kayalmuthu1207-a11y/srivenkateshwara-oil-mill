@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Trash2, LogIn } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -51,10 +51,6 @@ function Checkout() {
     pincode: "",
   });
   const [payment, setPayment] = useState(PAYMENT_METHODS[0]);
-
-  useEffect(() => {
-    if (user?.email) setForm((f) => (f.name ? f : { ...f }));
-  }, [user]);
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const discount = Math.round((subtotal * discountPct) / 100);

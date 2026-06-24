@@ -67,7 +67,7 @@ function Dashboard() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as OrderRow[];
+      return (data ?? []) as unknown as OrderRow[];
     },
   });
 

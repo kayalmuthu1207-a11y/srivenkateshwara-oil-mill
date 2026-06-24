@@ -40,12 +40,20 @@ function Index() {
           <div className="text-[var(--gold)] tracking-[0.3em] text-xs md:text-sm">
             ESTD · 1919
           </div>
-          <Link
-            to="/shop"
-            className="text-[var(--cream)] text-sm tracking-wide hover:text-[var(--gold)] transition-colors"
-          >
-            Skip →
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              to="/heritage"
+              className="text-[var(--cream)] text-sm tracking-wide hover:text-[var(--gold)] transition-colors"
+            >
+              Our Heritage
+            </Link>
+            <Link
+              to="/shop"
+              className="text-[var(--cream)] text-sm tracking-wide hover:text-[var(--gold)] transition-colors"
+            >
+              Skip →
+            </Link>
+          </div>
         </header>
 
         <section className="flex flex-1 items-center px-6 md:px-16">
@@ -88,7 +96,7 @@ function Index() {
                 size="lg"
                 className="h-14 px-8 border-[var(--cream)]/40 bg-transparent text-[var(--cream)] hover:bg-[var(--cream)]/10"
               >
-                <Link to="/shop">Explore Products</Link>
+                <Link to="/heritage">Our Heritage</Link>
               </Button>
             </div>
           </div>

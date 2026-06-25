@@ -27,11 +27,10 @@ function Index() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
       <div className="absolute inset-0">
-        <img
-          src={hero.url}
-          alt=""
+        <div
           aria-hidden="true"
-          className="h-full w-full object-cover"
+          className="h-full w-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${hero.url})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.18_0.04_50/0.85)] via-[oklch(0.18_0.04_50/0.55)] to-transparent" />
       </div>

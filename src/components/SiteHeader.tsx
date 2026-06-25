@@ -44,11 +44,8 @@ export function SiteHeader() {
             SV
           </div>
           <div className="leading-tight">
-            <div className="font-serif text-base font-semibold text-foreground">
-              Sri Venkateshwara
-            </div>
             <div className="text-[10px] tracking-[0.25em] text-muted-foreground">
-              OIL MILL · ESTD 1919
+              ESTD 1919
             </div>
           </div>
         </Link>

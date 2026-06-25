@@ -26,13 +26,11 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
-      <div className="absolute inset-0">
-        <img
-          src={hero.url}
-          alt=""
-          aria-hidden="true"
-          className="h-full w-full object-cover"
-        />
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${hero.url})` }}
+        aria-hidden="true"
+      >
         <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.18_0.04_50/0.85)] via-[oklch(0.18_0.04_50/0.55)] to-transparent" />
       </div>
 
@@ -104,7 +102,7 @@ function Index() {
         </section>
 
         <footer className="px-6 md:px-12 py-6 text-[var(--cream)]/60 text-xs tracking-wider">
-          © {new Date().getFullYear()} Sri Venkateshwara Oil Mill — Tradition, Purity & Health in Every Drop
+          © {new Date().getFullYear()} — Tradition, Purity & Health in Every Drop
         </footer>
       </div>
     </main>

@@ -9,28 +9,44 @@ export type CartItem = {
   image?: string;
 };
 
+export type WishlistItem = {
+  id: string;
+  size: string;
+};
+
 type ShopState = {
   cart: CartItem[];
+  wishlist: WishlistItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string, size: string) => void;
   updateQty: (id: string, size: string, qty: number) => void;
   clearCart: () => void;
+  addToWishlist: (item: WishlistItem) => void;
+  removeFromWishlist: (id: string, size: string) => void;
+  toggleWishlist: (item: WishlistItem) => void;
+  isWishlisted: (id: string, size: string) => boolean;
 };
 
 const ShopContext = createContext<ShopState | null>(null);
 
-const STORAGE_KEY = "svom_cart_v1";
+const CART_STORAGE_KEY = "svom_cart_v1";
+const WISHLIST_STORAGE_KEY = "svom_wishlist_v1";
 
 export function ShopProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const data = JSON.parse(raw);
+      const cartRaw = localStorage.getItem(CART_STORAGE_KEY);
+      if (cartRaw) {
+        const data = JSON.parse(cartRaw);
         setCart(data.cart || []);
+      }
+      const wishlistRaw = localStorage.getItem(WISHLIST_STORAGE_KEY);
+      if (wishlistRaw) {
+        setWishlist(JSON.parse(wishlistRaw));
       }
     } catch {}
     setHydrated(true);
@@ -38,8 +54,13 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cart }));
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ cart }));
   }, [cart, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist));
+  }, [wishlist, hydrated]);
 
   const addToCart: ShopState["addToCart"] = (item) => {
     setCart((prev) => {
@@ -63,9 +84,44 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => setCart([]);
 
+  const addToWishlist: ShopState["addToWishlist"] = (item) => {
+    setWishlist((prev) => {
+      if (prev.some((entry) => entry.id === item.id && entry.size === item.size)) {
+        return prev;
+      }
+      return [...prev, item];
+    });
+  };
+
+  const removeFromWishlist: ShopState["removeFromWishlist"] = (id, size) =>
+    setWishlist((prev) => prev.filter((item) => !(item.id === id && item.size === size)));
+
+  const toggleWishlist: ShopState["toggleWishlist"] = (item) => {
+    setWishlist((prev) => {
+      if (prev.some((entry) => entry.id === item.id && entry.size === item.size)) {
+        return prev.filter((entry) => !(entry.id === item.id && entry.size === item.size));
+      }
+      return [...prev, item];
+    });
+  };
+
+  const isWishlisted: ShopState["isWishlisted"] = (id, size) =>
+    wishlist.some((item) => item.id === id && item.size === size);
+
   return (
     <ShopContext.Provider
-      value={{ cart, addToCart, removeFromCart, updateQty, clearCart }}
+      value={{
+        cart,
+        wishlist,
+        addToCart,
+        removeFromCart,
+        updateQty,
+        clearCart,
+        addToWishlist,
+        removeFromWishlist,
+        toggleWishlist,
+        isWishlisted,
+      }}
     >
       {children}
     </ShopContext.Provider>

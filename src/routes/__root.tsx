@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ShopProvider } from "../lib/store";
 import { Toaster } from "@/components/ui/sonner";
+import { SiteFooter } from "@/components/SiteFooter";
+import { WhatsAppSupportButton } from "@/components/WhatsAppSupportButton";
 
 function NotFoundComponent() {
   return (
@@ -123,6 +125,8 @@ function RootComponent() {
       <ShopProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <SiteFooter />
+        <WhatsAppSupportButton />
         <Toaster richColors position="top-right" />
       </ShopProvider>
     </QueryClientProvider>

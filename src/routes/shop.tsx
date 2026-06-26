@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ImageOff } from "lucide-react";
+import { Heart, ImageOff } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,17 +24,18 @@ export const Route = createFileRoute("/shop")({
       {
         name: "description",
         content:
-          "Shop traditional cold-pressed oils and premium dry fruits from Sri Venkateshwara Oil Mill.",
+          "Shop traditional cold-pressed oils, premium dry fruits, natural honey, and millets from Sri Venkateshwara Oil Mill.",
       },
     ],
   }),
   component: Shop,
 });
 
-type Cat = "all" | "oils" | "dryfruits";
+type Cat = "all" | "oils" | "dryfruits" | "palm-products" | "honey" | "millets";
 type Sort = "featured" | "price-asc" | "price-desc" | "name";
 
 function Shop() {
+  const navigate = useNavigate();
   const [cat, setCat] = useState<Cat>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("featured");
@@ -66,7 +67,7 @@ function Shop() {
             FROM OUR MILL TO YOUR TABLE
           </p>
           <h1 className="mt-3 font-serif text-4xl md:text-5xl text-foreground">
-            Cold-pressed oils & premium dry fruits
+            Cold-pressed oils, premium dry fruits, pure natural honey & millets
           </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
             Traditionally wood-pressed, naturally filtered, lovingly bottled. Choose
@@ -78,7 +79,7 @@ function Shop() {
       <section className="mx-auto max-w-7xl px-4 py-8 md:px-8">
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <div className="flex gap-2">
-            {(["all", "oils", "dryfruits"] as const).map((c) => (
+            {(["all", "oils", "dryfruits", "palm-products", "honey", "millets"] as const).map((c) => (
               <button
                 key={c}
                 onClick={() => setCat(c)}
@@ -88,7 +89,17 @@ function Shop() {
                     : "border-border bg-card hover:border-primary/40"
                 }`}
               >
-                {c === "all" ? "All Products" : c === "oils" ? "Cold Pressed Oils" : "Dry Fruits & Nuts"}
+                {c === "all"
+                  ? "All Products"
+                  : c === "oils"
+                  ? "Cold Pressed Oils"
+                  : c === "dryfruits"
+                  ? "Dry Fruits & Nuts"
+                  : c === "palm-products"
+                  ? "Palm Products"
+                  : c === "honey"
+                  ? "Natural Honey"
+                  : "Millets & Traditional Grains"}
               </button>
             ))}
           </div>
@@ -131,8 +142,9 @@ function Shop() {
 function ProductCard({ product }: { product: Product }) {
   const [variantIdx, setVariantIdx] = useState(0);
   const [qty, setQty] = useState(1);
-  const { addToCart } = useShop();
+  const { addToCart, toggleWishlist, isWishlisted } = useShop();
   const variant = product.variants[variantIdx];
+  const wishlisted = isWishlisted(product.id, variant.size);
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:shadow-[var(--shadow-elegant)]">
@@ -140,7 +152,7 @@ function ProductCard({ product }: { product: Product }) {
         {product.image ? (
           <img
             src={product.image}
-            alt={product.name}
+            alt={product.imageAlt ?? product.name}
             className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -161,8 +173,22 @@ function ProductCard({ product }: { product: Product }) {
 
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div>
-          <h3 className="font-serif text-xl text-foreground">{product.name}</h3>
-          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-serif text-xl text-foreground">{product.name}</h3>
+              {product.tamilName ? (
+                <p className="text-sm text-muted-foreground">{product.tamilName}</p>
+              ) : null}
+            </div>
+            {product.rating ? (
+              <div className="flex items-center gap-1 text-[0.75rem] text-[var(--gold)]">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i}>{i < Math.round(product.rating) ? "★" : "☆"}</span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
             {product.description}
           </p>
         </div>
@@ -210,22 +236,67 @@ function ProductCard({ product }: { product: Product }) {
             </div>
           </div>
 
-          <Button
-            onClick={() => {
-              addToCart({
-                id: product.id,
-                name: product.name,
-                size: variant.size,
-                price: variant.price,
-                qty,
-                image: product.image,
-              });
-              toast.success(`${product.name} (${variant.size}) added to cart`);
-            }}
-            className="w-full"
-          >
-            Add to Cart
-          </Button>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              {typeof product.stock === "number" ? (
+                <span className="rounded-full bg-muted px-2 py-1">{product.stock} left</span>
+              ) : null}
+              {product.category === "honey" ? (
+                <Badge className="rounded-full bg-[var(--peach)] text-[var(--brown)]">Premium</Badge>
+              ) : null}
+            </div>
+            <div className="grid gap-2">
+              <Button
+                onClick={() => {
+                  addToCart({
+                    id: product.id,
+                    name: product.name,
+                    size: variant.size,
+                    price: variant.price,
+                    qty,
+                    image: product.image,
+                  });
+                  toast.success(`${product.name} (${variant.size}) added to cart`);
+                }}
+                className="w-full"
+              >
+                Add to Cart
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  addToCart({
+                    id: product.id,
+                    name: product.name,
+                    size: variant.size,
+                    price: variant.price,
+                    qty,
+                    image: product.image,
+                  });
+                  toast.success(`${product.name} (${variant.size}) added to cart`);
+                  navigate({ to: "/checkout" });
+                }}
+                className="w-full"
+              >
+                Buy Now
+              </Button>
+            </div>
+            <Button
+              variant={wishlisted ? "secondary" : "outline"}
+              onClick={() => {
+                toggleWishlist({ id: product.id, size: variant.size });
+                toast.success(
+                  wishlisted
+                    ? `${product.name} (${variant.size}) removed from wishlist`
+                    : `${product.name} (${variant.size}) added to wishlist`,
+                );
+              }}
+              className="w-full"
+            >
+              <Heart className="mr-2 h-4 w-4" />
+              {wishlisted ? "Remove from wishlist" : "Save for later"}
+            </Button>
+          </div>
           <ProductReviews productId={product.id} />
         </div>
       </div>

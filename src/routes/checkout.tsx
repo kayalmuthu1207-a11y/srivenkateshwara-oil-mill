@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, LogIn } from "lucide-react";
+import { ImageOff, LogIn, Trash2 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,18 @@ function Checkout() {
     pincode: "",
   });
   const [payment, setPayment] = useState(PAYMENT_METHODS[0]);
+  const [savedAddresses, setSavedAddresses] = useState<{
+    id: string;
+    label: string;
+    address: string;
+    landmark: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+    isDefault?: boolean;
+  }[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const discount = Math.round((subtotal * discountPct) / 100);
@@ -58,6 +70,7 @@ function Checkout() {
   const gst = Math.round(taxable * 0.05);
   const shipping = taxable === 0 ? 0 : taxable > 999 ? 0 : 60;
   const total = taxable + gst + shipping;
+  const addressBookKey = "svom_addresses_v1";
 
   const applyCoupon = () => {
     if (coupon.trim().toUpperCase() === "SVOM10") {
@@ -113,6 +126,33 @@ function Checkout() {
     toast.success(`Order placed successfully — #${(data?.id ?? "").slice(0, 8).toUpperCase()}`);
     navigate({ to: "/dashboard" });
   };
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(addressBookKey);
+      if (!raw) return;
+      const list = JSON.parse(raw) as typeof savedAddresses;
+      setSavedAddresses(list);
+      if (!selectedAddressId && list.length > 0) {
+        setSelectedAddressId(list.find((item) => item.isDefault)?.id ?? list[0].id);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!savedAddresses.length || !selectedAddressId) return;
+    const selected = savedAddresses.find((item) => item.id === selectedAddressId);
+    if (!selected) return;
+    setForm((current) => ({
+      ...current,
+      mobile: selected.phone ?? current.mobile,
+      address: selected.address ?? current.address,
+      landmark: selected.landmark ?? current.landmark,
+      city: selected.city ?? current.city,
+      state: selected.state ?? current.state,
+      pincode: selected.pincode ?? current.pincode,
+    }));
+  }, [savedAddresses, selectedAddressId]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -198,17 +238,67 @@ function Checkout() {
               {/* Delivery */}
               <section className="rounded-2xl border border-border bg-card p-6">
                 <h2 className="font-serif text-xl text-foreground">Delivery details</h2>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <Field label="Full Name" required value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-                  <Field label="Mobile Number" required value={form.mobile} onChange={(v) => setForm({ ...form, mobile: v })} />
-                  <div className="md:col-span-2">
-                    <Field label="Delivery Address" required value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
+                <div className="mt-4 space-y-4">
+                {savedAddresses.length > 0 ? (
+                  <div className="rounded-3xl border border-border bg-background/80 p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Saved delivery addresses</p>
+                        <p className="text-xs text-muted-foreground">Choose one to autofill the form.</p>
+                      </div>
+                      <Button asChild variant="outline">
+                        <Link to="/addresses">Manage</Link>
+                      </Button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {savedAddresses.map((address) => (
+                        <button
+                          key={address.id}
+                          type="button"
+                          onClick={() => setSelectedAddressId(address.id)}
+                          className={`rounded-2xl border px-4 py-3 text-left transition ${
+                            selectedAddressId === address.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border bg-card hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                            <span>{address.label || "Delivery address"}</span>
+                            {address.isDefault && (
+                              <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-primary">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm text-foreground leading-6">
+                            {address.address}
+                            {address.landmark ? ` · ${address.landmark}` : ""}
+                            <br />
+                            {address.city}, {address.state} · {address.pincode}
+                            <br />
+                            {address.phone}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <Field label="Landmark" value={form.landmark} onChange={(v) => setForm({ ...form, landmark: v })} />
-                  <Field label="City" required value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-                  <Field label="State" required value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
-                  <Field label="Pincode" required value={form.pincode} onChange={(v) => setForm({ ...form, pincode: v })} />
+                ) : (
+                  <div className="rounded-3xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                    No saved addresses found. Save one in your profile to autofill delivery details.
+                  </div>
+                )}
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <Field label="Full Name" required value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+                <Field label="Mobile Number" required value={form.mobile} onChange={(v) => setForm({ ...form, mobile: v })} />
+                <div className="md:col-span-2">
+                  <Field label="Delivery Address" required value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
                 </div>
+                <Field label="Landmark" value={form.landmark} onChange={(v) => setForm({ ...form, landmark: v })} />
+                <Field label="City" required value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+                <Field label="State" required value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
+                <Field label="Pincode" required value={form.pincode} onChange={(v) => setForm({ ...form, pincode: v })} />
+              </div>
               </section>
 
               {/* Payment */}

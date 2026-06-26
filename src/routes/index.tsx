@@ -100,10 +100,6 @@ function Index() {
             </div>
           </div>
         </section>
-
-        <footer className="px-6 md:px-12 py-6 text-[var(--cream)]/60 text-xs tracking-wider">
-          © {new Date().getFullYear()} — Tradition, Purity & Health in Every Drop
-        </footer>
       </div>
     </main>
   );

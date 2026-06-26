@@ -1,13 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ShoppingCart, LayoutDashboard, LogIn, LogOut } from "lucide-react";
+import { ShoppingCart, LayoutDashboard, LogIn, LogOut, Heart } from "lucide-react";
 import { useShop } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export function SiteHeader() {
-  const { cart } = useShop();
+  const { cart, wishlist } = useShop();
   const count = cart.reduce((n, i) => n + i.qty, 0);
+  const wishlistCount = wishlist.length;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [email, setEmail] = useState<string | null>(null);
 
@@ -53,6 +54,8 @@ export function SiteHeader() {
         <nav className="hidden items-center gap-8 md:flex">
           <Link to="/shop" className={navCls("/shop")}>Shop</Link>
           <Link to="/heritage" className={navCls("/heritage")}>Heritage</Link>
+          <Link to="/wishlist" className={navCls("/wishlist")}>Wishlist</Link>
+          <Link to="/profile" className={navCls("/profile")}>Profile</Link>
           <Link to="/dashboard" className={navCls("/dashboard")}>Dashboard</Link>
         </nav>
 
@@ -81,6 +84,18 @@ export function SiteHeader() {
             aria-label="Dashboard"
           >
             <LayoutDashboard className="h-5 w-5" />
+          </Link>
+          <Link
+            to="/wishlist"
+            className="relative hidden h-10 items-center gap-2 rounded-full bg-[var(--gold)] px-4 text-[oklch(0.22_0.04_50)] hover:opacity-90 md:flex"
+          >
+            <Heart className="h-4 w-4" />
+            <span className="text-sm font-medium">Wishlist</span>
+            {wishlistCount > 0 && (
+              <span className="ml-1 rounded-full bg-[oklch(0.11_0.05_95)] px-2 text-xs font-bold text-[var(--cream)]">
+                {wishlistCount}
+              </span>
+            )}
           </Link>
           <Link
             to="/checkout"

@@ -197,6 +197,12 @@ function AuthPage() {
             By continuing, you agree to receive a one-time verification email
             from Sri Venkateshwara Oil Mill.
           </p>
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            <span>Forgot your password? </span>
+            <Link to="/forgot-password" className="text-primary hover:underline">
+              Reset it here.
+            </Link>
+          </div>
         </div>
       </div>
     </div>
